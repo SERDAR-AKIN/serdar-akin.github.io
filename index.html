@@ -83,6 +83,7 @@
             padding: 10px;
             border-radius: 6px;
             font-weight: bold;
+            display: none;
         }
         .win {
             background-color: #4CAF50;
@@ -97,6 +98,11 @@
             color: var(--tg-theme-hint-color, #999999);
             margin-top: 20px;
         }
+        .loading {
+            display: none;
+            margin: 10px 0;
+            color: var(--tg-theme-hint-color, #999999);
+        }
     </style>
 </head>
 <body>
@@ -107,7 +113,7 @@
         </div>
         
         <div class="balance">
-            Bakiye: <span id="balance">1000.00</span> TL
+            Bakiye: <span id="balance">Yükleniyor...</span> TL
         </div>
 
         <div class="game-controls">
@@ -124,13 +130,13 @@
             </div>
         </div>
 
-        <div id="result" class="result" style="display: none;"></div>
+        <div id="loading" class="loading">İşleniyor...</div>
+        <div id="result" class="result"></div>
         
-        <div class="version">v1.2</div>
+        <div class="version">v1.3</div>
     </div>
 
     <script>
-        let balance = 1000.00;
         let tg = window.Telegram?.WebApp;
         let isTelegram = !!tg;
 
@@ -151,39 +157,44 @@
                 document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color);
                 document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color);
             }
+
+            // Bakiyeyi güncelle
+            updateBalance();
         }
 
-        function calculateProbability(guess, choice) {
-            if (choice === 'küçük') {
-                return guess / 1000.0;
-            } else if (choice === 'büyük') {
-                return (1000 - guess) / 1000.0;
+        async function updateBalance() {
+            try {
+                const response = await fetch(`https://api.telegram.org/bot${tg.initDataUnsafe.bot.token}/sendMessage`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chat_id: tg.initDataUnsafe.user.id,
+                        text: '/bakiye'
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.ok) {
+                    const balanceText = data.result.text;
+                    const balanceMatch = balanceText.match(/Bakiyeniz: ([\d.]+) TL/);
+                    if (balanceMatch) {
+                        document.getElementById('balance').textContent = balanceMatch[1];
+                    }
+                }
+            } catch (error) {
+                console.error('Bakiye güncellenirken hata:', error);
             }
-            return 0;
         }
 
-        function generatePayout(probability) {
-            if (probability === 0) return 0;
-            return (1 / probability) * 0.9;
-        }
-
-        function updateBalance(newBalance) {
-            balance = newBalance;
-            document.getElementById('balance').textContent = balance.toFixed(2);
-        }
-
-        function showResult(message, isWin) {
-            const resultDiv = document.getElementById('result');
-            resultDiv.textContent = message;
-            resultDiv.style.display = 'block';
-            resultDiv.className = 'result ' + (isWin ? 'win' : 'lose');
-        }
-
-        function playGame() {
+        async function playGame() {
             const guessInput = document.getElementById('guess');
             const choiceInput = document.getElementById('choice');
             const betInput = document.getElementById('bet');
             const playButton = document.getElementById('playButton');
+            const loadingDiv = document.getElementById('loading');
+            const resultDiv = document.getElementById('result');
 
             const guess = parseInt(guessInput.value);
             const choice = choiceInput.value;
@@ -198,44 +209,46 @@
                 alert('Minimum bahis 10 TL olmalıdır!');
                 return;
             }
-            if (bet > balance) {
-                alert('Yetersiz bakiye!');
-                return;
-            }
 
-            // Oyun mantığı
+            // Oyunu başlat
             playButton.disabled = true;
-            const probability = calculateProbability(guess, choice);
-            const payout = generatePayout(probability);
-            const generatedNumber = Math.floor(Math.random() * 1001);
-            
-            let win = false;
-            if (choice === 'küçük') {
-                win = generatedNumber < guess;
-            } else {
-                win = generatedNumber > guess;
-            }
+            loadingDiv.style.display = 'block';
+            resultDiv.style.display = 'none';
 
-            // Sonuç hesaplama
-            let message;
-            if (win) {
-                const winAmount = (bet * payout) - bet;
-                updateBalance(balance + winAmount);
-                message = `🎉 Tebrikler! Kazandınız!\n` +
-                         `📊 Çıkan Sayı: ${generatedNumber}\n` +
-                         `💰 Bahis: ${bet} TL\n` +
-                         `✨ Çarpan: ${payout.toFixed(2)}x\n` +
-                         `💵 Net Kazanç: ${winAmount.toFixed(2)} TL`;
-                showResult(message, true);
-            } else {
-                updateBalance(balance - bet);
-                message = `😔 Kaybettiniz!\n` +
-                         `📊 Çıkan Sayı: ${generatedNumber}\n` +
-                         `💰 Kaybedilen: ${bet} TL`;
-                showResult(message, false);
+            try {
+                const command = `/oyna ${guess} ${choice} ${bet}`;
+                const response = await fetch(`https://api.telegram.org/bot${tg.initDataUnsafe.bot.token}/sendMessage`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chat_id: tg.initDataUnsafe.user.id,
+                        text: command
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.ok) {
+                    const resultText = data.result.text;
+                    resultDiv.textContent = resultText;
+                    resultDiv.style.display = 'block';
+                    resultDiv.className = 'result ' + (resultText.includes('Tebrikler') ? 'win' : 'lose');
+                    
+                    // Bakiyeyi güncelle
+                    await updateBalance();
+                } else {
+                    throw new Error('Oyun başlatılamadı');
+                }
+            } catch (error) {
+                console.error('Oyun oynanırken hata:', error);
+                resultDiv.textContent = 'Bir hata oluştu, lütfen tekrar deneyin.';
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result lose';
+            } finally {
+                playButton.disabled = false;
+                loadingDiv.style.display = 'none';
             }
-
-            playButton.disabled = false;
         }
     </script>
 </body>
