@@ -164,27 +164,25 @@
 
         async function updateBalance() {
             try {
-                const response = await fetch(`https://api.telegram.org/bot${tg.initDataUnsafe.bot.token}/sendMessage`, {
+                const response = await fetch('/api/balance', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        chat_id: tg.initDataUnsafe.user.id,
-                        text: '/bakiye'
+                        initData: tg.initData
                     })
                 });
                 
                 const data = await response.json();
-                if (data.ok) {
-                    const balanceText = data.result.text;
-                    const balanceMatch = balanceText.match(/Bakiyeniz: ([\d.]+) TL/);
-                    if (balanceMatch) {
-                        document.getElementById('balance').textContent = balanceMatch[1];
-                    }
+                if (data.success) {
+                    document.getElementById('balance').textContent = data.balance;
+                } else {
+                    console.error('Bakiye alınamadı:', data.error);
                 }
             } catch (error) {
                 console.error('Bakiye güncellenirken hata:', error);
+                document.getElementById('balance').textContent = 'Hata!';
             }
         }
 
@@ -216,29 +214,29 @@
             resultDiv.style.display = 'none';
 
             try {
-                const command = `/oyna ${guess} ${choice} ${bet}`;
-                const response = await fetch(`https://api.telegram.org/bot${tg.initDataUnsafe.bot.token}/sendMessage`, {
+                const response = await fetch('/api/play', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        chat_id: tg.initDataUnsafe.user.id,
-                        text: command
+                        initData: tg.initData,
+                        guess: guess,
+                        choice: choice,
+                        bet: bet
                     })
                 });
                 
                 const data = await response.json();
-                if (data.ok) {
-                    const resultText = data.result.text;
-                    resultDiv.textContent = resultText;
+                if (data.success) {
+                    resultDiv.textContent = data.message;
                     resultDiv.style.display = 'block';
-                    resultDiv.className = 'result ' + (resultText.includes('Tebrikler') ? 'win' : 'lose');
+                    resultDiv.className = 'result ' + (data.win ? 'win' : 'lose');
                     
                     // Bakiyeyi güncelle
                     await updateBalance();
                 } else {
-                    throw new Error('Oyun başlatılamadı');
+                    throw new Error(data.error || 'Oyun başlatılamadı');
                 }
             } catch (error) {
                 console.error('Oyun oynanırken hata:', error);
