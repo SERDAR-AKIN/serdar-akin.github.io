@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tahmin Oyunu Mini App</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            border-radius: 12px;
+            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: var(--tg-theme-text-color, #000000);
+        }
+        .user-info {
+            font-size: 18px;
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+        }
+        .username {
+            color: var(--tg-theme-link-color, #2481cc);
+            font-weight: bold;
+        }
+        .version {
+            font-size: 12px;
+            color: var(--tg-theme-hint-color, #999999);
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tahmin Oyunu</h1>
+        <div class="user-info">
+            Hoş geldin <span class="username" id="username">...</span>
+        </div>
+        <div class="version">v1.2</div>
+    </div>
+    <script>
+        // Telegram WebApp'i başlat
+        let tg = window.Telegram.WebApp;
+        tg.expand(); // WebApp'i tam ekran yap
+        
+        // WebApp hazır olduğunda
+        tg.ready();
+        
+        // Kullanıcı bilgilerini al ve göster
+        const initData = tg.initDataUnsafe;
+        if (initData && initData.user) {
+            const username = initData.user.username || 'İsimsiz Kullanıcı';
+            document.getElementById('username').textContent = '@' + username;
+            
+            // Tema renklerini uygula
+            document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color);
+            document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color);
+            document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color);
+            document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color);
+            document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color);
+            document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color);
+        }
+    </script>
+</body>
+</html> 
