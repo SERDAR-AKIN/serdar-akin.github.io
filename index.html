@@ -11,7 +11,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             background-color: var(--tg-theme-bg-color, #ffffff);
             color: var(--tg-theme-text-color, #000000);
@@ -22,6 +22,8 @@
             border-radius: 12px;
             background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-width: 90%;
+            width: 400px;
         }
         h1 {
             font-size: 24px;
@@ -30,7 +32,7 @@
         }
         .user-info {
             font-size: 18px;
-            margin-top: 20px;
+            margin: 20px 0;
             padding: 10px;
             border-radius: 8px;
             background-color: var(--tg-theme-bg-color, #ffffff);
@@ -38,6 +40,57 @@
         .username {
             color: var(--tg-theme-link-color, #2481cc);
             font-weight: bold;
+        }
+        .game-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+        }
+        input[type="number"], input[type="text"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background-color: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .balance {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 15px 0;
+            color: var(--tg-theme-text-color, #000000);
+        }
+        .result {
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        .win {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .lose {
+            background-color: #f44336;
+            color: white;
         }
         .version {
             font-size: 12px;
@@ -50,31 +103,139 @@
     <div class="container">
         <h1>Tahmin Oyunu</h1>
         <div class="user-info">
-            Hoş geldin <span class="username" id="username">...</span>
+            Hoş geldin <span class="username" id="username">Oyuncu</span>
         </div>
+        
+        <div class="balance">
+            Bakiye: <span id="balance">1000.00</span> TL
+        </div>
+
+        <div class="game-controls">
+            <div class="input-group">
+                <input type="number" id="guess" placeholder="0-1000" min="0" max="1000">
+                <select id="choice">
+                    <option value="büyük">Büyük</option>
+                    <option value="küçük">Küçük</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <input type="number" id="bet" placeholder="Bahis" min="10">
+                <button onclick="playGame()" id="playButton">Oyna</button>
+            </div>
+        </div>
+
+        <div id="result" class="result" style="display: none;"></div>
+        
         <div class="version">v1.2</div>
     </div>
+
     <script>
-        // Telegram WebApp'i başlat
-        let tg = window.Telegram.WebApp;
-        tg.expand(); // WebApp'i tam ekran yap
-        
-        // WebApp hazır olduğunda
-        tg.ready();
-        
-        // Kullanıcı bilgilerini al ve göster
-        const initData = tg.initDataUnsafe;
-        if (initData && initData.user) {
-            const username = initData.user.username || 'İsimsiz Kullanıcı';
-            document.getElementById('username').textContent = '@' + username;
+        let balance = 1000.00;
+        let tg = window.Telegram?.WebApp;
+        let isTelegram = !!tg;
+
+        if (isTelegram) {
+            tg.expand();
+            tg.ready();
             
-            // Tema renklerini uygula
-            document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color);
-            document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color);
-            document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color);
-            document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color);
-            document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color);
-            document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color);
+            const initData = tg.initDataUnsafe;
+            if (initData && initData.user) {
+                const username = initData.user.username || 'Oyuncu';
+                document.getElementById('username').textContent = '@' + username;
+                
+                // Tema renklerini uygula
+                document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color);
+                document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color);
+                document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color);
+                document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color);
+                document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color);
+                document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color);
+            }
+        }
+
+        function calculateProbability(guess, choice) {
+            if (choice === 'küçük') {
+                return guess / 1000.0;
+            } else if (choice === 'büyük') {
+                return (1000 - guess) / 1000.0;
+            }
+            return 0;
+        }
+
+        function generatePayout(probability) {
+            if (probability === 0) return 0;
+            return (1 / probability) * 0.9;
+        }
+
+        function updateBalance(newBalance) {
+            balance = newBalance;
+            document.getElementById('balance').textContent = balance.toFixed(2);
+        }
+
+        function showResult(message, isWin) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result ' + (isWin ? 'win' : 'lose');
+        }
+
+        function playGame() {
+            const guessInput = document.getElementById('guess');
+            const choiceInput = document.getElementById('choice');
+            const betInput = document.getElementById('bet');
+            const playButton = document.getElementById('playButton');
+
+            const guess = parseInt(guessInput.value);
+            const choice = choiceInput.value;
+            const bet = parseFloat(betInput.value);
+
+            // Doğrulama kontrolleri
+            if (isNaN(guess) || guess < 0 || guess > 1000) {
+                alert('Lütfen 0-1000 arası bir sayı girin!');
+                return;
+            }
+            if (isNaN(bet) || bet < 10) {
+                alert('Minimum bahis 10 TL olmalıdır!');
+                return;
+            }
+            if (bet > balance) {
+                alert('Yetersiz bakiye!');
+                return;
+            }
+
+            // Oyun mantığı
+            playButton.disabled = true;
+            const probability = calculateProbability(guess, choice);
+            const payout = generatePayout(probability);
+            const generatedNumber = Math.floor(Math.random() * 1001);
+            
+            let win = false;
+            if (choice === 'küçük') {
+                win = generatedNumber < guess;
+            } else {
+                win = generatedNumber > guess;
+            }
+
+            // Sonuç hesaplama
+            let message;
+            if (win) {
+                const winAmount = (bet * payout) - bet;
+                updateBalance(balance + winAmount);
+                message = `🎉 Tebrikler! Kazandınız!\n` +
+                         `📊 Çıkan Sayı: ${generatedNumber}\n` +
+                         `💰 Bahis: ${bet} TL\n` +
+                         `✨ Çarpan: ${payout.toFixed(2)}x\n` +
+                         `💵 Net Kazanç: ${winAmount.toFixed(2)} TL`;
+                showResult(message, true);
+            } else {
+                updateBalance(balance - bet);
+                message = `😔 Kaybettiniz!\n` +
+                         `📊 Çıkan Sayı: ${generatedNumber}\n` +
+                         `💰 Kaybedilen: ${bet} TL`;
+                showResult(message, false);
+            }
+
+            playButton.disabled = false;
         }
     </script>
 </body>
