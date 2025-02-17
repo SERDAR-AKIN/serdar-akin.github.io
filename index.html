@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bakiye Yönetimi</title>
+    <script>window.webAppVersion = "6.2";</script>
+    <script src="https://telegram.org/js/telegram-web-app.js?v=6.2"></script>
+    <!-- Solana Wallet Adapter -->
+    <script src="https://unpkg.com/@solana/web3.js@1.87.6/lib/index.iife.min.js"></script>
+    <script src="https://unpkg.com/@project-serum/sol-wallet-adapter@0.2.6/dist/index.umd.js"></script>
+    <script src="https://unpkg.com/@solana/wallet-adapter-phantom@0.9.24/lib/index.iife.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --tg-theme-bg-color: #ffffff;
+            --tg-theme-text-color: #000000;
+            --tg-theme-button-color: #40a7e3;
+            --tg-theme-button-text-color: #ffffff;
+        }
+
+        body {
+            background-color: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 16px;
+        }
+
+        .balance-card {
+            background: rgba(64, 167, 227, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .balance-amount {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn-primary {
+            background-color: var(--tg-theme-button-color);
+            border: none;
+            color: var(--tg-theme-button-text-color);
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .transactions-list {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #qrCode {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .address-box {
+            background: rgba(0, 0, 0, 0.05);
+            padding: 10px;
+            border-radius: 8px;
+            word-break: break-all;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast Container -->
+    <div class="toast-container">
+        <div id="notificationToast" class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body"></div>
+                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Bakiye Kartı -->
+        <div class="balance-card">
+            <div>Mevcut Bakiye</div>
+            <div class="balance-amount" id="userBalance">0.00 USDC</div>
+        </div>
+
+        <!-- İşlem Butonları -->
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="showDepositUI()">Para Yatır</button>
+            <button class="btn btn-primary" onclick="showWithdrawUI()">Para Çek</button>
+        </div>
+
+        <!-- Para Yatırma Arayüzü -->
+        <div id="depositUI" style="display: none;">
+            <h3>Para Yatır</h3>
+            <div class="mb-3">
+                <label for="depositAmount" class="form-label">Miktar (USDC)</label>
+                <input type="number" class="form-control" id="depositAmount" min="1" max="10000" step="0.01">
+            </div>
+            <div id="depositAddress" class="address-box"></div>
+            <div id="qrCode"></div>
+            <button class="btn btn-primary w-100" onclick="connectWallet()">Cüzdan Bağla</button>
+        </div>
+
+        <!-- Para Çekme Arayüzü -->
+        <div id="withdrawUI" style="display: none;">
+            <h3>Para Çek</h3>
+            <div class="mb-3">
+                <label for="withdrawAmount" class="form-label">Miktar (USDC)</label>
+                <input type="number" class="form-control" id="withdrawAmount" min="1" step="0.01">
+            </div>
+            <div class="mb-3">
+                <label for="withdrawAddress" class="form-label">Solana Adresi</label>
+                <input type="text" class="form-control" id="withdrawAddress">
+                <button class="btn btn-secondary mt-2" onclick="scanQRCode()">QR Kod Tara</button>
+            </div>
+            <div class="mb-3">
+                <small class="text-muted">İşlem ücreti: 0.1 USDC</small>
+            </div>
+            <button class="btn btn-primary w-100" onclick="initiateWithdraw()">Para Çek</button>
+        </div>
+
+        <!-- Son İşlemler -->
+        <div class="transactions-list">
+            <h3>Son İşlemler</h3>
+            <div id="transactionsList"></div>
+        </div>
+
+        <!-- Yükleniyor -->
+        <div class="loading" id="loading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Yükleniyor...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap ve diğer scriptler -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/qrcode-generator"></script>
+    <script src="/static/js/app.js" defer></script>
+</body>
+</html>
