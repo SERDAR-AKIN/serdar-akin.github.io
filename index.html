@@ -1,253 +1,173 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-    <title>Tahmin Oyunu Mini App</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>Bakiye Yönetimi</title>
+    <script>window.webAppVersion = "6.2";</script>
+    <script src="https://telegram.org/js/telegram-web-app.js?v=6.2"></script>
+    <!-- Solana Wallet Adapter -->
+    <script src="https://unpkg.com/@solana/web3.js@1.87.6/lib/index.iife.min.js"></script>
+    <script src="https://unpkg.com/@project-serum/sol-wallet-adapter@0.2.6/dist/index.umd.js"></script>
+    <script src="https://unpkg.com/@solana/wallet-adapter-phantom@0.9.24/lib/index.iife.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        :root {
+            --tg-theme-bg-color: #ffffff;
+            --tg-theme-text-color: #000000;
+            --tg-theme-button-color: #40a7e3;
+            --tg-theme-button-text-color: #ffffff;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            background-color: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
-            background-color: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #000000);
+            padding: 16px;
         }
-        .container {
-            text-align: center;
-            padding: 20px;
+
+        .balance-card {
+            background: rgba(64, 167, 227, 0.1);
             border-radius: 12px;
-            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            max-width: 90%;
-            width: 400px;
-        }
-        h1 {
-            font-size: 24px;
+            padding: 20px;
             margin-bottom: 20px;
-            color: var(--tg-theme-text-color, #000000);
+            text-align: center;
         }
-        .user-info {
-            font-size: 18px;
-            margin: 20px 0;
-            padding: 10px;
-            border-radius: 8px;
-            background-color: var(--tg-theme-bg-color, #ffffff);
-        }
-        .username {
-            color: var(--tg-theme-link-color, #2481cc);
+
+        .balance-amount {
+            font-size: 32px;
             font-weight: bold;
+            margin: 10px 0;
         }
-        .game-controls {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            margin: 20px 0;
-        }
-        .input-group {
+
+        .action-buttons {
             display: flex;
             gap: 10px;
-            justify-content: center;
-            align-items: center;
+            margin-bottom: 20px;
         }
-        input[type="number"], input[type="text"] {
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            width: 100px;
-        }
-        button {
-            padding: 10px 20px;
+
+        .btn-primary {
+            background-color: var(--tg-theme-button-color);
             border: none;
-            border-radius: 6px;
-            background-color: var(--tg-theme-button-color, #2481cc);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            cursor: pointer;
-            font-weight: bold;
+            color: var(--tg-theme-button-text-color);
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
         }
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
+
+        .transactions-list {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+            padding: 16px;
         }
-        .balance {
-            font-size: 18px;
-            font-weight: bold;
-            margin: 15px 0;
-            color: var(--tg-theme-text-color, #000000);
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
         }
-        .result {
-            margin: 15px 0;
-            padding: 10px;
-            border-radius: 6px;
-            font-weight: bold;
-            display: none;
-        }
-        .win {
-            background-color: #4CAF50;
-            color: white;
-        }
-        .lose {
-            background-color: #f44336;
-            color: white;
-        }
-        .version {
-            font-size: 12px;
-            color: var(--tg-theme-hint-color, #999999);
-            margin-top: 20px;
-        }
+
         .loading {
             display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #qrCode {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .address-box {
+            background: rgba(0, 0, 0, 0.05);
+            padding: 10px;
+            border-radius: 8px;
+            word-break: break-all;
             margin: 10px 0;
-            color: var(--tg-theme-hint-color, #999999);
+            font-family: monospace;
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Tahmin Oyunu</h1>
-        <div class="user-info">
-            Hoş geldin <span class="username" id="username">Oyuncu</span>
-        </div>
-        
-        <div class="balance">
-            Bakiye: <span id="balance">Yükleniyor...</span> TL
-        </div>
-
-        <div class="game-controls">
-            <div class="input-group">
-                <input type="number" id="guess" placeholder="0-1000" min="0" max="1000">
-                <select id="choice">
-                    <option value="büyük">Büyük</option>
-                    <option value="küçük">Küçük</option>
-                </select>
-            </div>
-            <div class="input-group">
-                <input type="number" id="bet" placeholder="Bahis" min="10">
-                <button onclick="playGame()" id="playButton">Oyna</button>
+    <!-- Toast Container -->
+    <div class="toast-container">
+        <div id="notificationToast" class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body"></div>
+                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
         </div>
-
-        <div id="loading" class="loading">İşleniyor...</div>
-        <div id="result" class="result"></div>
-        
-        <div class="version">v1.3</div>
     </div>
 
-    <script>
-        let tg = window.Telegram?.WebApp;
-        let isTelegram = !!tg;
+    <div class="container">
+        <!-- Bakiye Kartı -->
+        <div class="balance-card">
+            <div>Mevcut Bakiye</div>
+            <div class="balance-amount" id="userBalance">0.00 USDC</div>
+        </div>
 
-        if (isTelegram) {
-            tg.expand();
-            tg.ready();
-            
-            const initData = tg.initDataUnsafe;
-            if (initData && initData.user) {
-                const username = initData.user.username || 'Oyuncu';
-                document.getElementById('username').textContent = '@' + username;
-                
-                // Tema renklerini uygula
-                document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color);
-                document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color);
-                document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color);
-                document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color);
-                document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color);
-                document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color);
-            }
+        <!-- İşlem Butonları -->
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="showDepositUI()">Para Yatır</button>
+            <button class="btn btn-primary" onclick="showWithdrawUI()">Para Çek</button>
+        </div>
 
-            // Bakiyeyi güncelle
-            updateBalance();
-        }
+        <!-- Para Yatırma Arayüzü -->
+        <div id="depositUI" style="display: none;">
+            <h3>Para Yatır</h3>
+            <div class="mb-3">
+                <label for="depositAmount" class="form-label">Miktar (USDC)</label>
+                <input type="number" class="form-control" id="depositAmount" min="1" max="10000" step="0.01">
+            </div>
+            <div id="depositAddress" class="address-box"></div>
+            <div id="qrCode"></div>
+            <button class="btn btn-primary w-100" onclick="connectWallet()">Cüzdan Bağla</button>
+        </div>
 
-        async function updateBalance() {
-            try {
-                const response = await fetch('/api/balance', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        initData: tg.initData
-                    })
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    document.getElementById('balance').textContent = data.balance;
-                } else {
-                    console.error('Bakiye alınamadı:', data.error);
-                }
-            } catch (error) {
-                console.error('Bakiye güncellenirken hata:', error);
-                document.getElementById('balance').textContent = 'Hata!';
-            }
-        }
+        <!-- Para Çekme Arayüzü -->
+        <div id="withdrawUI" style="display: none;">
+            <h3>Para Çek</h3>
+            <div class="mb-3">
+                <label for="withdrawAmount" class="form-label">Miktar (USDC)</label>
+                <input type="number" class="form-control" id="withdrawAmount" min="1" step="0.01">
+            </div>
+            <div class="mb-3">
+                <label for="withdrawAddress" class="form-label">Solana Adresi</label>
+                <input type="text" class="form-control" id="withdrawAddress">
+                <button class="btn btn-secondary mt-2" onclick="scanQRCode()">QR Kod Tara</button>
+            </div>
+            <div class="mb-3">
+                <small class="text-muted">İşlem ücreti: 0.1 USDC</small>
+            </div>
+            <button class="btn btn-primary w-100" onclick="initiateWithdraw()">Para Çek</button>
+        </div>
 
-        async function playGame() {
-            const guessInput = document.getElementById('guess');
-            const choiceInput = document.getElementById('choice');
-            const betInput = document.getElementById('bet');
-            const playButton = document.getElementById('playButton');
-            const loadingDiv = document.getElementById('loading');
-            const resultDiv = document.getElementById('result');
+        <!-- Son İşlemler -->
+        <div class="transactions-list">
+            <h3>Son İşlemler</h3>
+            <div id="transactionsList"></div>
+        </div>
 
-            const guess = parseInt(guessInput.value);
-            const choice = choiceInput.value;
-            const bet = parseFloat(betInput.value);
+        <!-- Yükleniyor -->
+        <div class="loading" id="loading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Yükleniyor...</span>
+            </div>
+        </div>
+    </div>
 
-            // Doğrulama kontrolleri
-            if (isNaN(guess) || guess < 0 || guess > 1000) {
-                alert('Lütfen 0-1000 arası bir sayı girin!');
-                return;
-            }
-            if (isNaN(bet) || bet < 10) {
-                alert('Minimum bahis 10 TL olmalıdır!');
-                return;
-            }
-
-            // Oyunu başlat
-            playButton.disabled = true;
-            loadingDiv.style.display = 'block';
-            resultDiv.style.display = 'none';
-
-            try {
-                const response = await fetch('/api/play', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        initData: tg.initData,
-                        guess: guess,
-                        choice: choice,
-                        bet: bet
-                    })
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    resultDiv.textContent = data.message;
-                    resultDiv.style.display = 'block';
-                    resultDiv.className = 'result ' + (data.win ? 'win' : 'lose');
-                    
-                    // Bakiyeyi güncelle
-                    await updateBalance();
-                } else {
-                    throw new Error(data.error || 'Oyun başlatılamadı');
-                }
-            } catch (error) {
-                console.error('Oyun oynanırken hata:', error);
-                resultDiv.textContent = 'Bir hata oluştu, lütfen tekrar deneyin.';
-                resultDiv.style.display = 'block';
-                resultDiv.className = 'result lose';
-            } finally {
-                playButton.disabled = false;
-                loadingDiv.style.display = 'none';
-            }
-        }
-    </script>
+    <!-- Bootstrap ve diğer scriptler -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/qrcode-generator"></script>
+    <script src="/static/js/app.js" defer></script>
 </body>
-</html> 
+</html>
