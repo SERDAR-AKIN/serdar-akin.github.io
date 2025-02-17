@@ -1,173 +1,187 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 <head>
     <meta charset="UTF-8">
+    <title>CoinGuess - Crypto Oyun Platformu</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bakiye Yönetimi</title>
-    <script>window.webAppVersion = "6.2";</script>
-    <script src="https://telegram.org/js/telegram-web-app.js?v=6.2"></script>
-    <!-- Solana Wallet Adapter -->
-    <script src="https://unpkg.com/@solana/web3.js@1.87.6/lib/index.iife.min.js"></script>
-    <script src="https://unpkg.com/@project-serum/sol-wallet-adapter@0.2.6/dist/index.umd.js"></script>
-    <script src="https://unpkg.com/@solana/wallet-adapter-phantom@0.9.24/lib/index.iife.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --tg-theme-bg-color: #ffffff;
-            --tg-theme-text-color: #000000;
-            --tg-theme-button-color: #40a7e3;
-            --tg-theme-button-text-color: #ffffff;
+            --primary: #2AABEE;
+            --background: #1E1E2F;
+            --card-bg: #2D2D44;
+        }
+        
+        body {
+            background: var(--background);
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 20px;
         }
 
-        body {
-            background-color: var(--tg-theme-bg-color);
-            color: var(--tg-theme-text-color);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 16px;
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--primary);
         }
 
         .balance-card {
-            background: rgba(64, 167, 227, 0.1);
-            border-radius: 12px;
+            background: var(--card-bg);
+            border-radius: 15px;
             padding: 20px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .balance-amount {
-            font-size: 32px;
-            font-weight: bold;
-            margin: 10px 0;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
         .action-buttons {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            display: grid;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
         }
 
         .btn-primary {
-            background-color: var(--tg-theme-button-color);
-            border: none;
-            color: var(--tg-theme-button-text-color);
-            flex: 1;
-            padding: 12px;
-            border-radius: 8px;
-        }
-
-        .transactions-list {
-            background: rgba(0, 0, 0, 0.05);
-            border-radius: 12px;
-            padding: 16px;
-        }
-
-        .transaction-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-
-        #qrCode {
-            text-align: center;
-            margin: 20px 0;
+            background: var(--primary);
+            color: white;
         }
 
         .address-box {
-            background: rgba(0, 0, 0, 0.05);
+            background: #373750;
             padding: 10px;
             border-radius: 8px;
-            word-break: break-all;
-            margin: 10px 0;
-            font-family: monospace;
+            margin: 15px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
+        .copy-icon {
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--primary);
+            background: var(--card-bg);
+            color: white;
+            margin: 10px 0;
         }
     </style>
 </head>
 <body>
-    <!-- Toast Container -->
-    <div class="toast-container">
-        <div id="notificationToast" class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body"></div>
-                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-    </div>
-
     <div class="container">
-        <!-- Bakiye Kartı -->
+        <div class="header">
+            <h1>🪙 CoinGuess</h1>
+            <p>Hoş Geldin, <span id="username"></span>!</p>
+        </div>
+
         <div class="balance-card">
-            <div>Mevcut Bakiye</div>
-            <div class="balance-amount" id="userBalance">0.00 USDC</div>
+            <h3>💰 Mevcut Bakiye</h3>
+            <h1 id="balance">0.00 TL</h1>
         </div>
 
-        <!-- İşlem Butonları -->
         <div class="action-buttons">
-            <button class="btn btn-primary" onclick="showDepositUI()">Para Yatır</button>
-            <button class="btn btn-primary" onclick="showWithdrawUI()">Para Çek</button>
+            <button class="btn btn-primary" onclick="showDeposit()">Para Yatır (USDT/USDC)</button>
+            <button class="btn btn-primary" onclick="showWithdraw()">Para Çek</button>
         </div>
 
-        <!-- Para Yatırma Arayüzü -->
-        <div id="depositUI" style="display: none;">
-            <h3>Para Yatır</h3>
-            <div class="mb-3">
-                <label for="depositAmount" class="form-label">Miktar (USDC)</label>
-                <input type="number" class="form-control" id="depositAmount" min="1" max="10000" step="0.01">
+        <div id="depositSection" style="display:none;">
+            <div class="address-box">
+                <span id="walletAddress">Cüzdan adresi yükleniyor...</span>
+                <span class="copy-icon" onclick="copyAddress()">📋</span>
             </div>
-            <div id="depositAddress" class="address-box"></div>
-            <div id="qrCode"></div>
-            <button class="btn btn-primary w-100" onclick="connectWallet()">Cüzdan Bağla</button>
+            <p>⚠️ Lütfen SOLANA ağı üzerinden USDT veya USDC gönderin</p>
         </div>
 
-        <!-- Para Çekme Arayüzü -->
-        <div id="withdrawUI" style="display: none;">
-            <h3>Para Çek</h3>
-            <div class="mb-3">
-                <label for="withdrawAmount" class="form-label">Miktar (USDC)</label>
-                <input type="number" class="form-control" id="withdrawAmount" min="1" step="0.01">
-            </div>
-            <div class="mb-3">
-                <label for="withdrawAddress" class="form-label">Solana Adresi</label>
-                <input type="text" class="form-control" id="withdrawAddress">
-                <button class="btn btn-secondary mt-2" onclick="scanQRCode()">QR Kod Tara</button>
-            </div>
-            <div class="mb-3">
-                <small class="text-muted">İşlem ücreti: 0.1 USDC</small>
-            </div>
-            <button class="btn btn-primary w-100" onclick="initiateWithdraw()">Para Çek</button>
-        </div>
-
-        <!-- Son İşlemler -->
-        <div class="transactions-list">
-            <h3>Son İşlemler</h3>
-            <div id="transactionsList"></div>
-        </div>
-
-        <!-- Yükleniyor -->
-        <div class="loading" id="loading">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Yükleniyor...</span>
-            </div>
+        <div id="withdrawSection" style="display:none;">
+            <input type="number" id="withdrawAmount" placeholder="Çekilecek Miktar (TL)">
+            <button class="btn btn-primary" onclick="submitWithdraw()">Talep Gönder</button>
         </div>
     </div>
 
-    <!-- Bootstrap ve diğer scriptler -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://unpkg.com/qrcode-generator"></script>
-    <script src="/static/js/app.js" defer></script>
+    <script>
+        const tg = window.Telegram.WebApp;
+        let userData = null;
+
+        async function init() {
+            tg.expand();
+            userData = await verifyUser(tg.initData);
+            document.getElementById('username').textContent = userData.first_name;
+            loadBalance();
+            checkWallet();
+        }
+
+        async function verifyUser(initData) {
+            const response = await fetch('/api/user', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({initData})
+            });
+            return response.json();
+        }
+
+        async function loadBalance() {
+            const response = await fetch(`/api/balance?user_id=${userData.id}`);
+            const data = await response.json();
+            document.getElementById('balance').textContent = data.balance;
+        }
+
+        async function checkWallet() {
+            const response = await fetch(`/api/wallet?user_id=${userData.id}`);
+            const wallet = await response.json();
+            document.getElementById('walletAddress').textContent = wallet.address;
+        }
+
+        function showDeposit() {
+            document.getElementById('depositSection').style.display = 'block';
+            document.getElementById('withdrawSection').style.display = 'none';
+        }
+
+        function showWithdraw() {
+            document.getElementById('withdrawSection').style.display = 'block';
+            document.getElementById('depositSection').style.display = 'none';
+        }
+
+        function copyAddress() {
+            navigator.clipboard.writeText(document.getElementById('walletAddress').textContent);
+            tg.showAlert('Cüzdan adresi panoya kopyalandı!');
+        }
+
+        async function submitWithdraw() {
+            const amount = document.getElementById('withdrawAmount').value;
+            const response = await fetch('/api/withdraw', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    user_id: userData.id,
+                    amount: amount
+                })
+            });
+            
+            if(response.ok) {
+                tg.showAlert('Çekim talebiniz alındı!');
+                loadBalance();
+            }
+        }
+
+        init();
+    </script>
 </body>
 </html>
