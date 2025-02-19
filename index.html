@@ -83,12 +83,22 @@
             color: white;
             margin: 10px 0;
         }
+
+        .info-text {
+            color: #ffa500;
+            font-size: 0.9em;
+            margin: 10px 0;
+        }
+        
+        #withdrawSection input {
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🪙 CoinGuess</h1>
+            <h1>🪙 Sayı Tahmin Oyunu</h1>
             <p>Hoş Geldin, <span id="username"></span>!</p>
         </div>
 
@@ -112,6 +122,8 @@
 
         <div id="withdrawSection" style="display:none;">
             <input type="number" id="withdrawAmount" placeholder="Çekilecek Miktar (TL)">
+            <input type="text" id="withdrawAddress" placeholder="USDT/USDC Cüzdan Adresiniz (Solana)">
+            <p class="info-text">⚠️ Lütfen Solana ağı üzerindeki USDT/USDC cüzdan adresinizi girin</p>
             <button class="btn btn-primary" onclick="submitWithdraw()">Talep Gönder</button>
         </div>
     </div>
@@ -167,18 +179,38 @@
 
         async function submitWithdraw() {
             const amount = document.getElementById('withdrawAmount').value;
+            const address = document.getElementById('withdrawAddress').value;
+            
+            // Temel doğrulamalar
+            if (!amount || amount <= 0) {
+                tg.showAlert('Lütfen geçerli bir miktar girin');
+                return;
+            }
+            
+            if (!address || address.trim().length < 32) {
+                tg.showAlert('Lütfen geçerli bir Solana cüzdan adresi girin');
+                return;
+            }
+            
             const response = await fetch(`${API_BASE_URL}/withdraw`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     user_id: userData.id,
-                    amount: amount
+                    amount: amount,
+                    withdrawal_address: address
                 })
             });
             
             if(response.ok) {
                 tg.showAlert('Çekim talebiniz alındı!');
                 loadBalance();
+                // Formu temizle
+                document.getElementById('withdrawAmount').value = '';
+                document.getElementById('withdrawAddress').value = '';
+            } else {
+                const error = await response.json();
+                tg.showAlert(error.error || 'Çekim işlemi başarısız oldu');
             }
         }
 
