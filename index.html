@@ -119,6 +119,7 @@
     <script>
         const tg = window.Telegram.WebApp;
         let userData = null;
+        const API_BASE_URL = 'http://78.188.132.138:5001/api';
 
         async function init() {
             tg.expand();
@@ -129,7 +130,7 @@
         }
 
         async function verifyUser(initData) {
-            const response = await fetch('/api/user', {
+            const response = await fetch(`${API_BASE_URL}/user`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({initData})
@@ -138,13 +139,13 @@
         }
 
         async function loadBalance() {
-            const response = await fetch(`/api/balance?user_id=${userData.id}`);
+            const response = await fetch(`${API_BASE_URL}/balance?user_id=${userData.id}`);
             const data = await response.json();
             document.getElementById('balance').textContent = data.balance;
         }
 
         async function checkWallet() {
-            const response = await fetch(`/api/wallet?user_id=${userData.id}`);
+            const response = await fetch(`${API_BASE_URL}/wallet?user_id=${userData.id}`);
             const wallet = await response.json();
             document.getElementById('walletAddress').textContent = wallet.address;
         }
@@ -166,7 +167,7 @@
 
         async function submitWithdraw() {
             const amount = document.getElementById('withdrawAmount').value;
-            const response = await fetch('/api/withdraw', {
+            const response = await fetch(`${API_BASE_URL}/withdraw`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
