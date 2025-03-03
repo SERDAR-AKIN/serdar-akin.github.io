@@ -1,220 +1,930 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>CoinGuess - Crypto Oyun Platformu</title>
+    <title>CryptoVault - Güvenli Kripto İşlemleri</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #2AABEE;
-            --background: #1E1E2F;
-            --card-bg: #2D2D44;
+            --primary: #6772e5;
+            --primary-light: #8792fa;
+            --primary-dark: #4957cb;
+            --secondary: #38b2ac;
+            --dark: #1a202c;
+            --dark-light: #2d3748;
+            --light: #e2e8f0;
+            --danger: #e53e3e;
+            --warning: #f6ad55;
+            --success: #48bb78;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
         
         body {
-            background: var(--background);
-            color: white;
-            font-family: 'Segoe UI', sans-serif;
-            margin: 0;
+            background: linear-gradient(135deg, var(--dark) 0%, var(--dark-light) 100%);
+            color: var(--light);
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
             padding: 20px;
         }
 
         .container {
-            max-width: 600px;
+            max-width: 500px;
             margin: 0 auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: rgba(45, 55, 72, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .header {
             text-align: center;
-            padding: 20px 0;
-            border-bottom: 1px solid var(--primary);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: var(--light);
+            opacity: 0.8;
+            font-size: 1rem;
         }
 
         .balance-card {
-            background: var(--card-bg);
-            border-radius: 15px;
-            padding: 20px;
-            margin: 20px 0;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .balance-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(103, 114, 229, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+            z-index: 0;
+        }
+
+        .balance-label {
+            font-size: 1rem;
+            color: var(--light);
+            opacity: 0.8;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .balance-amount {
+            font-size: 2.5rem;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+            margin-bottom: 5px;
+        }
+
+        .balance-currency {
+            font-size: 1rem;
+            opacity: 0.7;
+            position: relative;
+            z-index: 1;
         }
 
         .action-buttons {
             display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 15px;
-            margin-top: 30px;
+            margin-bottom: 20px;
         }
 
         .btn {
-            padding: 12px;
+            padding: 14px 20px;
             border: none;
-            border-radius: 8px;
-            font-weight: bold;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
         }
 
         .btn-primary {
-            background: var(--primary);
+            background: linear-gradient(to right, var(--primary), var(--primary-dark));
             color: white;
         }
 
-        .address-box {
-            background: #373750;
-            padding: 10px;
-            border-radius: 8px;
-            margin: 15px 0;
+        .btn-primary:hover {
+            background: linear-gradient(to right, var(--primary-dark), var(--primary));
+            box-shadow: 0 4px 12px rgba(103, 114, 229, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--light);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 8px;
         }
 
-        .copy-icon {
-            cursor: pointer;
-            margin-left: 10px;
+        .wallet-address {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            word-break: break-all;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        input {
-            width: 100%;
-            padding: 12px;
+        .copy-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--light);
+            border: none;
             border-radius: 8px;
-            border: 1px solid var(--primary);
-            background: var(--card-bg);
-            color: white;
-            margin: 10px 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--light);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(103, 114, 229, 0.2);
+        }
+
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.4);
         }
 
         .info-text {
-            color: #ffa500;
-            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--warning);
+            font-size: 0.85rem;
             margin: 10px 0;
         }
-        
-        #withdrawSection input {
+
+        .network-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            background: rgba(56, 178, 172, 0.2);
+            color: var(--secondary);
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+
+        .error-container {
+            display: none;
+            background: rgba(229, 62, 62, 0.1);
+            border-left: 4px solid var(--danger);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .error-message {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .error-icon {
+            color: var(--danger);
+            font-size: 1.2rem;
+        }
+
+        .error-text {
+            flex: 1;
+            font-size: 0.9rem;
+        }
+
+        .close-error {
+            cursor: pointer;
+            font-size: 1.2rem;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+        }
+
+        .close-error:hover {
+            opacity: 1;
+        }
+
+        .withdrawal-list {
+            margin-top: 15px;
+        }
+
+        .withdrawal-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
             margin-bottom: 10px;
+            transition: transform 0.2s ease;
+        }
+
+        .withdrawal-item:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .withdrawal-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .withdrawal-date {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.8rem;
+        }
+
+        .withdrawal-amount {
+            font-weight: 600;
+            color: var(--primary-light);
+        }
+
+        .withdrawal-address {
+            font-family: monospace;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            word-break: break-all;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: rgba(246, 173, 85, 0.2);
+            color: var(--warning);
+        }
+
+        .cancel-btn {
+            background: rgba(229, 62, 62, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(229, 62, 62, 0.2);
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .cancel-btn:hover {
+            background: rgba(229, 62, 62, 0.2);
+        }
+
+        .cancel-btn i {
+            font-size: 0.9rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px 0;
+            opacity: 0.6;
+        }
+
+        .empty-state i {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .qr-code {
+            display: block;
+            width: 180px;
+            height: 180px;
+            margin: 20px auto;
+            padding: 5px;
+            background: white;
+            border-radius: 12px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .balance-amount {
+                font-size: 2rem;
+            }
+        }
+
+        /* Sekme Stilleri */
+        .deposit-withdraw-tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            cursor: pointer;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            border-bottom: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Loader Animation */
+        .loader {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--light);
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🪙 Sayı Tahmin Oyunu</h1>
-            <p>Hoş Geldin, <span id="username"></span>!</p>
-        </div>
-
-        <div class="balance-card">
-            <h3>💰 Mevcut Bakiye</h3>
-            <h1 id="balance">0.00 TL</h1>
-        </div>
-
-        <div class="action-buttons">
-            <button class="btn btn-primary" onclick="showDeposit()">Para Yatır (USDT/USDC)</button>
-            <button class="btn btn-primary" onclick="showWithdraw()">Para Çek</button>
-        </div>
-
-        <div id="depositSection" style="display:none;">
-            <div class="address-box">
-                <span id="walletAddress">Cüzdan adresi yükleniyor...</span>
-                <span class="copy-icon" onclick="copyAddress()">📋</span>
+        <!-- Hata Bildirimi -->
+        <div id="errorContainer" class="error-container">
+            <div class="error-message">
+                <i class="fa-solid fa-circle-exclamation error-icon"></i>
+                <span id="errorText" class="error-text"></span>
+                <i class="fa-solid fa-xmark close-error" onclick="hideError()"></i>
             </div>
-            <p>⚠️ Lütfen SOLANA ağı üzerinden USDT veya USDC gönderin</p>
         </div>
 
-        <div id="withdrawSection" style="display:none;">
-            <input type="number" id="withdrawAmount" placeholder="Çekilecek Miktar (TL)">
-            <input type="text" id="withdrawAddress" placeholder="USDT/USDC Cüzdan Adresiniz (Solana)">
-            <p class="info-text">⚠️ Lütfen Solana ağı üzerindeki USDT/USDC cüzdan adresinizi girin</p>
-            <button class="btn btn-primary" onclick="submitWithdraw()">Talep Gönder</button>
+        <!-- Başlık -->
+        <div class="header">
+            <h1>CryptoVault</h1>
+            <p>Merhaba, <span id="username">Kullanıcı</span>!</p>
+        </div>
+
+        <!-- Bakiye Kartı -->
+        <div class="card balance-card">
+            <div class="balance-label">
+                <i class="fa-solid fa-wallet"></i> Toplam Bakiyeniz
+            </div>
+            <div class="balance-amount" id="balance">0.00</div>
+            <div class="balance-currency">TL</div>
+        </div>
+
+        <!-- İşlem Sekmeleri -->
+        <div class="card">
+            <div class="deposit-withdraw-tabs">
+                <div id="depositTab" class="tab" onclick="showTab('deposit')">Para Yatır</div>
+                <div id="withdrawTab" class="tab" onclick="showTab('withdraw')">Para Çek</div>
+            </div>
+
+            <!-- Para Yatırma İçeriği -->
+            <div id="depositContent" class="tab-content">
+                <div class="section-title">
+                    <i class="fa-solid fa-arrow-down-to-line"></i> USDT/USDC Yatırma
+                </div>
+                
+                <img id="qrCode" class="qr-code" alt="QR Kod">
+                
+                <div class="form-group">
+                    <label>Yatırma Adresi <span class="network-badge">Solana</span></label>
+                    <div class="wallet-address">
+                        <span id="walletAddress">Yükleniyor...</span>
+                        <button class="copy-btn" onclick="copyAddress()">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="info-text">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>Lütfen sadece <strong>Solana</strong> ağı üzerinden USDT veya USDC token gönderin.</span>
+                </div>
+                
+                <div class="info-text">
+                    <i class="fa-solid fa-clock"></i>
+                    <span>İşlemler genellikle 2-3 dakika içinde gerçekleşir.</span>
+                </div>
+            </div>
+
+            <!-- Para Çekme İçeriği -->
+            <div id="withdrawContent" class="tab-content">
+                <div class="section-title">
+                    <i class="fa-solid fa-arrow-up-from-line"></i> USDT/USDC Çekme
+                </div>
+                
+                <div class="form-group">
+                    <label>Çekilecek Miktar (TL)</label>
+                    <input type="number" id="withdrawAmount" class="form-control" placeholder="Örn: 100">
+                </div>
+                
+                <div class="form-group">
+                    <label>Cüzdan Adresi <span class="network-badge">Solana</span></label>
+                    <input type="text" id="withdrawAddress" class="form-control" placeholder="Solana cüzdan adresiniz">
+                </div>
+                
+                <div class="info-text">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>Lütfen sadece <strong>Solana</strong> ağındaki USDT/USDC cüzdan adresinizi girin.</span>
+                </div>
+                
+                <div class="info-text">
+                    <i class="fa-solid fa-clock"></i>
+                    <span>Çekim işlemleri genellikle 24 saat içinde tamamlanır.</span>
+                </div>
+                
+                <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="submitWithdraw()">
+                    <span id="withdrawBtnText">Çekim Talebi Oluştur</span>
+                    <span id="withdrawLoader" class="loader"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Bekleyen Çekimler -->
+        <div class="card">
+            <div class="section-title">
+                <i class="fa-solid fa-clock-rotate-left"></i> Bekleyen Çekim Talepleri
+            </div>
+            
+            <div id="withdrawalsList" class="withdrawal-list">
+                <!-- Buraya API'den gelen veriler eklenecek -->
+                <div class="empty-state" id="emptyWithdrawals">
+                    <i class="fa-solid fa-inbox"></i>
+                    <p>Henüz bekleyen çekim talebiniz bulunmuyor.</p>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         let userData = null;
-        const API_BASE_URL = 'http://78.188.132.138:5001/api';
+        const API_BASE_URL = 'http://95.13.78.152:5001/api';
 
+        // Sayfa Yükleme ve Kullanıcı Doğrulama
         async function init() {
+            if (!tg.initData) {
+                document.body.innerHTML = `
+                    <div class="container" style="text-align: center; padding-top: 50px;">
+                        <div class="card">
+                            <h2 style="margin-bottom: 20px;">⚠️ Bu sayfa sadece Telegram üzerinden erişilebilir</h2>
+                            <p style="margin-bottom: 20px;">Lütfen aşağıdaki bağlantıyı kullanarak Telegram botumuz üzerinden erişin:</p>
+                            <a href="https://t.me/dicerpro_bot" style="color: var(--primary); font-weight: bold; text-decoration: none; font-size: 1.1rem;">
+                                <i class="fa-brands fa-telegram"></i> Telegram Botuna Git
+                            </a>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
             tg.expand();
-            userData = await verifyUser(tg.initData);
-            document.getElementById('username').textContent = userData.first_name;
-            loadBalance();
-            checkWallet();
+            showLoading(true);
+            
+            try {
+                userData = await verifyUser(tg.initData);
+                document.getElementById('username').textContent = userData.first_name || 'Kullanıcı';
+                
+                await Promise.all([
+                    loadBalance(),
+                    checkWallet(),
+                    loadWithdrawals()
+                ]);
+                
+                // Varsayılan sekme
+                showTab('deposit');
+            } catch (error) {
+                showError('Uygulama başlatılırken bir hata oluştu: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
         }
 
+        // Kullanıcı Doğrulama
         async function verifyUser(initData) {
-            const response = await fetch(`${API_BASE_URL}/user`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({initData})
-            });
-            return response.json();
+            try {
+                const response = await fetch(`${API_BASE_URL}/user`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ initData })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Kullanıcı doğrulama hatası');
+                }
+                
+                return response.json();
+            } catch (error) {
+                showError('Kullanıcı doğrulanamadı: ' + error.message);
+                throw error;
+            }
         }
 
+        // Bakiye Yükleme
         async function loadBalance() {
-            const response = await fetch(`${API_BASE_URL}/balance?user_id=${userData.id}`);
-            const data = await response.json();
-            document.getElementById('balance').textContent = data.balance;
+            try {
+                const response = await fetch(`${API_BASE_URL}/balance?user_id=${userData.id}`);
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Bakiye yüklenemedi');
+                }
+                
+                const data = await response.json();
+                document.getElementById('balance').textContent = parseFloat(data.balance).toFixed(2);
+            } catch (error) {
+                showError('Bakiye yüklenemedi: ' + error.message);
+            }
         }
 
+        // Cüzdan Bilgisi Alma
         async function checkWallet() {
-            const response = await fetch(`${API_BASE_URL}/wallet?user_id=${userData.id}`);
-            const wallet = await response.json();
-            document.getElementById('walletAddress').textContent = wallet.address;
+            try {
+                const response = await fetch(`${API_BASE_URL}/wallet?user_id=${userData.id}`);
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Cüzdan bilgisi alınamadı');
+                }
+                
+                const wallet = await response.json();
+                document.getElementById('walletAddress').textContent = wallet.address;
+                
+                // QR kod oluşturma
+                generateQR(wallet.address);
+            } catch (error) {
+                showError('Cüzdan bilgisi alınamadı: ' + error.message);
+            }
         }
 
-        function showDeposit() {
-            document.getElementById('depositSection').style.display = 'block';
-            document.getElementById('withdrawSection').style.display = 'none';
+        // QR Kod Oluşturma
+        function generateQR(address) {
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(address)}&size=180x180&color=103-114-229&bgcolor=255-255-255`;
+            document.getElementById('qrCode').src = qrUrl;
         }
 
-        function showWithdraw() {
-            document.getElementById('withdrawSection').style.display = 'block';
-            document.getElementById('depositSection').style.display = 'none';
+        // Çekim Taleplerini Yükleme
+        async function loadWithdrawals() {
+            try {
+                // Cache önleme için timestamp ekleyelim
+                const response = await fetch(`${API_BASE_URL}/withdrawals?user_id=${userData.id}&_=${Date.now()}`);
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Çekim talepleri yüklenemedi');
+                }
+                
+                const withdrawals = await response.json();
+                const listContainer = document.getElementById('withdrawalsList');
+                const emptyState = document.getElementById('emptyWithdrawals');
+                
+                // Önce mevcut içeriği temizleyelim - boş durum mesajını koruyarak
+                while (listContainer.children.length > 1) {
+                    listContainer.removeChild(listContainer.lastChild);
+                }
+
+                if (withdrawals.length === 0) {
+                    // Boş durum mesajını göster
+                    emptyState.style.display = 'block';
+                } else {
+                    // Boş durum mesajını gizle ve çekim taleplerini ekle
+                    emptyState.style.display = 'none';
+                    
+                    withdrawals.forEach(withdrawal => {
+                        // Tarih işleme kısmı
+                        const [datePart, timePart] = withdrawal.created_at.split(' ');
+                        const [day, month, year] = datePart.split('.');
+                        const [hours, minutes] = timePart.split(':');
+                        
+                        const parsedDate = new Date(
+                            parseInt(year),
+                            parseInt(month) - 1, // Ay 0-11 arasında olmalı
+                            parseInt(day),
+                            parseInt(hours),
+                            parseInt(minutes)
+                        );
+                        
+                        const formattedDate = parsedDate.toLocaleDateString('tr-TR', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        
+                        // HTML oluşturma
+                        const div = document.createElement('div');
+                        div.className = 'withdrawal-item';
+                        div.innerHTML = `
+                            <div class="withdrawal-header">
+                                <span class="withdrawal-date">${formattedDate}</span>
+                                <span class="withdrawal-amount">${parseFloat(withdrawal.amount).toFixed(2)} TL</span>
+                            </div>
+                            <div class="withdrawal-address">${withdrawal.withdrawal_address}</div>
+                            <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+                                <button class="cancel-btn" onclick="cancelWithdrawal(${withdrawal.id})">
+                                    <i class="fa-solid fa-ban"></i> İptal Et
+                                </button>
+                                <span class="status-badge status-pending">İşlemde</span>
+                            </div>
+                        `;
+                        
+                        listContainer.appendChild(div);
+                    });
+                }
+            } catch (error) {
+                showError('Çekim talepleri yüklenirken hata: ' + error.message);
+            }
         }
 
-        function copyAddress() {
-            navigator.clipboard.writeText(document.getElementById('walletAddress').textContent);
-            tg.showAlert('Cüzdan adresi panoya kopyalandı!');
-        }
-
+        // Para Çekme Talebi Gönderme
         async function submitWithdraw() {
-            const amount = document.getElementById('withdrawAmount').value;
-            const address = document.getElementById('withdrawAddress').value;
+            const amountInput = document.getElementById('withdrawAmount');
+            const addressInput = document.getElementById('withdrawAddress');
+            const btnText = document.getElementById('withdrawBtnText');
+            const loader = document.getElementById('withdrawLoader');
             
-            // Temel doğrulamalar
-            if (!amount || amount <= 0) {
-                tg.showAlert('Lütfen geçerli bir miktar girin');
+            // Formu doğrulama
+            if (!amountInput.value || parseFloat(amountInput.value) <= 0) {
+                showError('Lütfen geçerli bir çekim miktarı girin');
+                amountInput.focus();
                 return;
             }
             
-            if (!address || address.trim().length < 32) {
-                tg.showAlert('Lütfen geçerli bir Solana cüzdan adresi girin');
+            if (!addressInput.value || addressInput.value.trim().length < 32) {
+                showError('Lütfen geçerli bir Solana cüzdan adresi girin');
+                addressInput.focus();
                 return;
             }
             
-            const response = await fetch(`${API_BASE_URL}/withdraw`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    user_id: userData.id,
-                    amount: amount,
-                    withdrawal_address: address
-                })
+            // Butonu devre dışı bırak ve yükleniyor animasyonu göster
+            btnText.style.display = 'none';
+            loader.style.display = 'inline-block';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/withdraw`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        user_id: userData.id,
+                        amount: parseFloat(amountInput.value),
+                        withdrawal_address: addressInput.value.trim()
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Çekim işlemi başarısız oldu');
+                }
+                
+                // İşlem başarılı
+                tg.showPopup({
+                    title: "İşlem Başarılı",
+                    message: "Çekim talebiniz başarıyla alındı. İşleminiz en kısa sürede işleme alınacaktır.",
+                    buttons: [{type: "ok"}]
+                });
+                
+                // Formu temizle
+                amountInput.value = '';
+                addressInput.value = '';
+                
+                // Önce bakiyeyi güncelleyelim, ardından çekim listesini
+                await loadBalance();
+                await loadWithdrawals();
+                
+                // Depozit sekmesine geçelim
+                showTab('deposit');
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                // Butonu eski haline getir
+                btnText.style.display = 'inline';
+                loader.style.display = 'none';
+            }
+        }
+
+        // Çekim Talebini İptal Etme
+        async function cancelWithdrawal(withdrawalId) {
+            if (!confirm('Bu çekim talebini iptal etmek istediğinize emin misiniz? İptal edilen tutar bakiyenize geri eklenecektir.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/cancel-withdrawal`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        user_id: userData.id,
+                        withdrawal_id: withdrawalId
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Çekim iptali başarısız oldu');
+                }
+                
+                // İşlem başarılı
+                tg.showPopup({
+                    title: "İşlem Başarılı",
+                    message: "Çekim talebiniz başarıyla iptal edildi. İptal edilen tutar bakiyenize geri eklendi.",
+                    buttons: [{type: "ok"}]
+                });
+                
+                // Önce bakiyeyi güncelleyelim, ardından çekim listesini
+                await loadBalance();
+                await loadWithdrawals();
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        // Cüzdan Adresini Kopyalama
+        function copyAddress() {
+            const address = document.getElementById('walletAddress').textContent;
+            
+            // Telegram WebApp Copy işlevi
+            if (tg && tg.sendData) {
+                tg.sendData(JSON.stringify({type: 'copy', data: address}));
+                tg.showPopup({
+                    title: "Kopyalandı",
+                    message: "Cüzdan adresi panoya kopyalandı.",
+                    buttons: [{type: "ok"}]
+                });
+            } else {
+                // Yedek kopyalama mekanizması
+                navigator.clipboard.writeText(address)
+                    .then(() => {
+                        tg.showAlert('Cüzdan adresi panoya kopyalandı!');
+                    })
+                    .catch(err => {
+                        showError('Kopyalama işlemi başarısız oldu: ' + err.message);
+                    });
+            }
+        }
+
+        // Sekme Gösterimi
+        function showTab(tabName) {
+            // Tüm sekme içeriklerini gizle
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
             });
             
-            if(response.ok) {
-                tg.showAlert('Çekim talebiniz alındı!');
-                loadBalance();
-                // Formu temizle
-                document.getElementById('withdrawAmount').value = '';
-                document.getElementById('withdrawAddress').value = '';
-            } else {
-                const error = await response.json();
-                tg.showAlert(error.error || 'Çekim işlemi başarısız oldu');
-            }
+            // Tüm sekme başlıklarını pasif yap
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Seçilen sekmeyi ve içeriğini aktif et
+            document.getElementById(`${tabName}Content`).classList.add('active');
+            document.getElementById(`${tabName}Tab`).classList.add('active');
         }
 
-        init();
+        // Hata Gösterme
+        function showError(message) {
+            const errorContainer = document.getElementById('errorContainer');
+            const errorText = document.getElementById('errorText');
+            
+            errorText.textContent = message;
+            errorContainer.style.display = 'block';
+            
+            // 5 saniye sonra otomatik kaybolma
+            setTimeout(() => {
+                hideError();
+            }, 5000);
+        }
+
+        // Hata Mesajını Gizleme
+        function hideError() {
+            document.getElementById('errorContainer').style.display = 'none';
+        }
+
+        // Yükleniyor Durumu
+        function showLoading(isLoading) {
+            // Burada genel bir yükleniyor göstergesi eklenebilir
+        }
+
+        // Sayfa başlatma
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
-</html>
+</html> 
